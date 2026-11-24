@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Les régions de la voix</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* VOICE: clair, pédagogique, chaleureux comme les slides d'Anaïs
+   IDEA: une planche anatomique vivante qui tourne sur son socle
+   PICTURE: cerveau 3D translucide, marqueurs colorés par champ
+   COLOUR and TYPE: crème, orange titre, teal ; Lilita One + Open Sans
+   LAYOUT: cerveau à gauche, fiche de la région à droite, légende-filtres dessous */
+:root{color-scheme:light dark;--bg:light-dark(#FCEBD0,#1d1a16);--card:light-dark(#FFF7EA,#2a2520);--ink:light-dark(#2C2C2A,#F3EBDD);--muted:light-dark(#6b665e,#b9b0a2);--line:light-dark(#2F7472,#5fb3ae);--title:#E8704A}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 "Open Sans",system-ui,sans-serif;overflow-x:clip}
+.band{padding:clamp(20px,3vw,40px) max(4vw,16px);max-width:1240px;margin:0 auto}
+h1{font:400 clamp(32px,4.5vw,48px)/1.05 "Lilita One",system-ui,sans-serif;color:var(--title);margin:0 0 6px;text-wrap:balance}
+.sub{color:var(--muted);margin:0 0 18px;font-size:15px}
+.grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:20px;align-items:stretch}
+.fig{position:relative;min-height:440px;border:2px solid var(--line);background:var(--card);border-radius:4px;overflow:hidden}
+.fig canvas{position:absolute;inset:0;width:100%;height:100%;cursor:grab;touch-action:none}
+.hint{position:absolute;left:12px;bottom:10px;font-size:13px;color:var(--muted);pointer-events:none}
+.panel{border:2px solid var(--line);background:var(--card);border-radius:4px;padding:18px 18px 14px;display:flex;flex-direction:column;gap:10px}
+.panel h2{font:600 20px/1.25 "Open Sans",sans-serif;margin:0}
+.panel .empty{color:var(--muted)}
+.entry{border-left:4px solid var(--c);padding:4px 0 4px 10px}
+.entry b{display:block;font-size:13px;color:var(--c)}
+.entry p{margin:2px 0;font-size:15px}
+.entry small{color:var(--muted);font-size:13px}
+.note{font-size:13px;color:var(--muted);margin-top:auto;border-top:1px solid color-mix(in srgb,var(--line) 30%,transparent);padding-top:8px}
+.legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.legend button{font:600 14px "Open Sans",sans-serif;min-height:44px;padding:0 14px;border-radius:22px;border:2px solid var(--c);background:var(--c);color:#fff;cursor:pointer;display:flex;align-items:center;gap:8px}
+.legend button[aria-pressed=false]{background:transparent;color:var(--c)}
+.legend button:focus-visible,.ctrl:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+.ctrl{font:600 14px "Open Sans",sans-serif;min-height:44px;padding:0 14px;border-radius:22px;border:2px solid var(--ink);background:transparent;color:var(--ink);cursor:pointer}
+.foot{font-size:13px;color:var(--muted);margin-top:14px}
+@media(max-width:760px){.grid{grid-template-columns:1fr}.fig{min-height:340px}}
+</style>
+</head>
+<body>
+<div class="band">
+  <h1>Les régions de la voix</h1>
+  <p class="sub">D'après les articles cités dans la présentation. Une couleur par champ. Touche ou clique un point pour arrêter la rotation et voir la région ; touche ailleurs pour relancer. Glisse pour tourner.</p>
+  <div class="grid">
+    <div class="fig" id="fig"><canvas id="c" aria-label="Cerveau 3D interactif"></canvas><div class="hint" id="hint">En rotation</div></div>
+    <aside class="panel" id="panel" aria-live="polite"></aside>
+  </div>
+  <div class="legend" id="legend"></div>
+  <p class="foot">Coordonnées MNI approximatives, à visée illustrative. Endeuillés : aucune étude n'a imagé le cerveau pendant une perception du défunt ; ces régions viennent du deuil compliqué. Sources : Alderson-Day &amp; Fernyhough, 2015 ; Corlett et al., 2019 ; Diederen et al., 2012 ; Garrison et al., 2019 ; O'Connor et al., 2008 ; Powers et al., 2020 ; Szechtman et al., 1998.</p>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+{
+const F={
+  inner:{n:"Voix intérieure",c:"#4F7CAC"},
+  schizo:{n:"Schizophrénie (voix)",c:"#E8704A"},
+  medium:{n:"Non cliniques (médiums, sains)",c:"#017573"},
+  deuil:{n:"Endeuillés",c:"#D99A2B"}
+};
+const D12="Diederen et al., 2012";
+const AF="Alderson-Day & Fernyhough, 2015";
+const R=[
+ {id:"ifgL",n:"Gyrus frontal inférieur gauche (aire de Broca)",p:[-48,20,8],e:[
+  ["inner","Région la plus constante de la parole intérieure ; une lésion à cet endroit l'altère.",AF+" ; Geva et al., 2011"],
+  ["schizo","Activé pendant les voix ; participe aussi aux prédictions perceptives.","Jardri et al., 2011 ; Kühn & Gallinat, 2012 ; Corlett et al., 2019"],
+  ["medium","Activé pendant les voix, sans différence avec les patients.",D12]]},
+ {id:"ifgR",n:"Gyrus frontal inférieur droit",p:[48,20,8],e:[
+  ["schizo","Activé pendant les voix.",D12],["medium","Activé pendant les voix, comme chez les patients.",D12]]},
+ {id:"stgL",n:"Gyrus temporal supérieur gauche, partie postérieure (Wernicke)",p:[-56,-34,8],e:[
+  ["inner","Impliqué dans la parole intérieure.",AF],
+  ["schizo","Activé pendant les voix ; recoupe le circuit des hallucinations conditionnées en laboratoire.",D12+" ; Corlett et al., 2019"],
+  ["medium","Activé pendant les voix.",D12]]},
+ {id:"stgR",n:"Gyrus temporal supérieur droit",p:[56,-30,8],e:[
+  ["schizo","Activé pendant les voix.",D12],["medium","Activé pendant les voix.",D12]]},
+ {id:"tpL",n:"Pôle temporal supérieur",p:[-44,14,-24],e:[
+  ["schizo","Activé pendant les voix.",D12],["medium","Activé pendant les voix.",D12]]},
+ {id:"sma",n:"Aire motrice supplémentaire",p:[-4,0,62],e:[
+  ["inner","Impliquée dans la parole intérieure.",AF]]},
+ {id:"prem",n:"Gyrus précentral et cortex prémoteur gauches",p:[-46,-6,44],e:[
+  ["inner","Cortex prémoteur impliqué dans la parole intérieure.",AF],
+  ["schizo","Gyrus précentral gauche activé pendant les voix.",D12],
+  ["medium","Gyrus précentral gauche activé pendant les voix.",D12]]},
+ {id:"insL",n:"Insula gauche",p:[-38,4,2],e:[
+  ["schizo","Activée pendant les voix ; fait partie du circuit des hallucinations conditionnées.",D12+" ; Corlett et al., 2019"],
+  ["medium","Activée pendant les voix, comme chez les patients.",D12],
+  ["deuil","Réseau de la douleur : activée chez tous les endeuillés face aux rappels du défunt.","O'Connor et al., 2008"]]},
+ {id:"insR",n:"Insula droite",p:[38,4,2],e:[
+  ["schizo","Activée pendant les voix.",D12],["medium","Activée pendant les voix.",D12],
+  ["deuil","Réseau de la douleur chez tous les endeuillés.","O'Connor et al., 2008"]]},
+ {id:"smgL",n:"Gyrus supramarginal gauche",p:[-52,-44,32],e:[
+  ["schizo","Activé pendant les voix.",D12],["medium","Activé pendant les voix.",D12]]},
+ {id:"smgR",n:"Gyrus supramarginal droit",p:[52,-44,32],e:[
+  ["schizo","Activé pendant les voix.",D12],["medium","Activé pendant les voix.",D12]]},
+ {id:"pocL",n:"Gyrus postcentral gauche",p:[-42,-26,52],e:[
+  ["schizo","Activé pendant les voix.",D12],["medium","Activé pendant les voix.",D12]]},
+ {id:"pocR",n:"Gyrus postcentral droit",p:[42,-26,52],e:[
+  ["schizo","Activé pendant les voix.",D12],["medium","Activé pendant les voix.",D12]]},
+ {id:"iplL",n:"Lobule pariétal inférieur",p:[-40,-56,44],e:[
+  ["schizo","Activé pendant les voix.",D12],["medium","Activé pendant les voix.",D12]]},
+ {id:"cbR",n:"Cervelet droit",p:[24,-70,-30],e:[
+  ["schizo","Activé pendant les voix.",D12],["medium","Activé pendant les voix.",D12]]},
+ {id:"pcs",n:"Sillon paracingulaire droit (cortex préfrontal médian)",p:[8,30,34],e:[
+  ["medium","Plus court (−8,8 mm) chez les médiums comme chez les patients. Aide à distinguer l'imaginé du perçu.","Powers et al., 2020"],
+  ["schizo","Plus court chez les patients ; sur un échantillon plus large, chez les patients seulement. Débat ouvert.","Powers et al., 2020 ; Garrison et al., 2019"]]},
+ {id:"acc32",n:"Cortex cingulaire antérieur droit (BA32)",p:[8,40,8],e:[
+  ["medium","Actif pendant l'audition réelle et l'hallucination sous hypnose, pas pendant l'imagination ; plus il est actif, plus la voix semble venir de l'extérieur (8 sujets).","Szechtman et al., 1998"]]},
+ {id:"dacc",n:"Cortex cingulaire antérieur dorsal",p:[-2,24,24],e:[
+  ["deuil","Réseau de la douleur : activé chez tous les endeuillés.","O'Connor et al., 2008"]]},
+ {id:"str",n:"Striatum",p:[-14,10,8],e:[
+  ["schizo","Plus de dopamine striatale (marqueur du risque de psychose) = plus de poids aux attentes dans la perception.","Corlett et al., 2019"]]},
+ {id:"nacc",n:"Noyau accumbens (NAcc)",p:[10,20,-6],e:[
+  ["deuil","Activé par les rappels du défunt dans le deuil compliqué seulement ; lié au manque (r = .42).","O'Connor et al., 2008"]]},
+ {id:"pag",n:"Substance grise périaqueducale",p:[-6,-26,-14],e:[
+  ["deuil","Réseau de la douleur chez tous les endeuillés.","O'Connor et al., 2008"]]}
+];
+const S=1/40, v=(x,y,z)=>new THREE.Vector3(x*S,z*S,-y*S);
+const fig=document.getElementById('fig'),cv=document.getElementById('c'),panel=document.getElementById('panel'),hint=document.getElementById('hint');
+const renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+const scene=new THREE.Scene(),cam=new THREE.PerspectiveCamera(35,1,0.1,100);
+cam.position.set(0,1.0,7.6);cam.lookAt(0,0,0);
+scene.add(new THREE.HemisphereLight(0xfff4e6,0x8a6a4a,1.0));
+const dl=new THREE.DirectionalLight(0xffffff,0.6);dl.position.set(3,5,6);scene.add(dl);
+const root=new THREE.Group();scene.add(root);root.rotation.x=0.12;
+function lobe(cx,cy,cz,rx,ry,rz,seed){
+  const g=new THREE.SphereGeometry(1,64,48),a=g.attributes.position;
+  for(let i=0;i<a.count;i++){
+    let x=a.getX(i),y=a.getY(i),z=a.getZ(i);
+    const n=1+0.035*Math.sin(9*x+seed)*Math.sin(11*y+2*seed)*Math.sin(8*z-seed)+0.02*Math.sin(19*x+3*y+seed);
+    if(y<-0.55)y=-0.55+(y+0.55)*0.5;
+    a.setXYZ(i,x*rx*n,y*ry*n,z*rz*n);
+  }
+  g.computeVertexNormals();g.translate(cx,cy,cz);return g;
+}
+const brainMat=new THREE.MeshStandardMaterial({color:0xF2C9B8,roughness:0.8,transparent:true,opacity:0.28,depthWrite:false});
+const p=v(0,-17,18);
+for(const s of[-1,1]){const m=new THREE.Mesh(lobe(p.x+s*36*S,p.y,p.z,34*S,58*S,86*S,s*2),brainMat);root.add(m);}
+const cb=v(0,-68,-34);root.add(new THREE.Mesh(lobe(cb.x,cb.y,cb.z,48*S,20*S,26*S,5),brainMat));
+const bs=new THREE.Mesh(new THREE.CylinderGeometry(9*S,7*S,45*S,24),brainMat);const bp=v(0,-28,-42);bs.position.copy(bp);root.add(bs);
+const picks=[],groups={};
+for(const k in F)groups[k]=[];
+R.forEach(r=>{
+  const c=v(...r.p),fs=r.e.map(e=>e[0]);
+  if(r.tract){
+    fs.forEach((f,i)=>{
+      const o=(i-(fs.length-1)/2)*3;
+      const curve=new THREE.CatmullRomCurve3([v(-48,22,8+o),v(-46,0,26+o),v(-44,-28,30+o),v(-54,-40,14+o),v(-58,-30,0+o)]);
+      const m=new THREE.Mesh(new THREE.TubeGeometry(curve,60,1.3*S,8,false),new THREE.MeshStandardMaterial({color:F[f].c,emissive:F[f].c,emissiveIntensity:0.35}));
+      m.userData={r,f};root.add(m);picks.push(m);groups[f].push(m);
+    });return;
+  }
+  fs.forEach((f,i)=>{
+    const ang=i/fs.length*Math.PI*2,off=fs.length>1?4.2*S:0;
+    const m=new THREE.Mesh(new THREE.SphereGeometry(3.6*S,24,16),new THREE.MeshStandardMaterial({color:F[f].c,emissive:F[f].c,emissiveIntensity:0.35,roughness:0.5}));
+    m.position.set(c.x+Math.cos(ang)*off,c.y+Math.sin(ang)*off,c.z);
+    m.userData={r,f};root.add(m);groups[f].push(m);
+    const h=new THREE.Mesh(new THREE.SphereGeometry(7.5*S,12,8),new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}));
+    h.position.copy(m.position);h.userData={r,f,marker:m};root.add(h);picks.push(h);groups[f].push(h);
+  });
+});
+const ring=new THREE.Mesh(new THREE.TorusGeometry(9*S,0.7*S,8,40),new THREE.MeshBasicMaterial({color:0x2C2C2A}));ring.visible=false;root.add(ring);
+let spin=true,sel=null;
+const esc=s=>String(s).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
+function show(r){
+  if(!r){panel.innerHTML='<h2>Touche une région</h2><p class="empty">Chaque point coloré correspond à un champ. Une région partagée par plusieurs champs porte plusieurs points.</p><p class="note">Ce que montre la figure : pendant les voix, le même réseau s\'active chez les patients et chez les entendeurs non cliniques (Diederen et al., 2012).</p>';return;}
+  panel.innerHTML='<h2>'+esc(r.n)+'</h2>'+r.e.filter(e=>vis[e[0]]).map(e=>'<div class="entry" style="--c:'+F[e[0]].c+'"><b>'+esc(F[e[0]].n)+'</b><p>'+esc(e[1])+'</p><small>'+esc(e[2])+'</small></div>').join('')+'<button class="ctrl" id="resume" type="button">Relancer la rotation</button>';
+  document.getElementById('resume').onclick=()=>{select(null)};
+}
+function select(m){
+  sel=m;spin=!m;hint.textContent=spin?'En rotation':'Arrêté · '+m.userData.r.n;
+  if(m){ring.visible=true;ring.position.copy(m.position);}else ring.visible=false;
+  show(m?m.userData.r:null);
+  if(m&&innerWidth<760)panel.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+const vis={};
+const lg=document.getElementById('legend');
+lg.innerHTML=Object.entries(F).map(([k,f])=>'<button type="button" id="lg-'+k+'" data-k="'+k+'" aria-pressed="true" style="--c:'+f.c+'">'+esc(f.n)+'</button>').join('');
+for(const k in F)vis[k]=true;
+lg.addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;const k=b.dataset.k;
+  vis[k]=!vis[k];b.setAttribute('aria-pressed',vis[k]);groups[k].forEach(m=>m.visible=vis[k]);
+  if(sel&&!sel.visible)select(null);else if(sel)show(sel.userData.r);
+});
+const ray=new THREE.Raycaster(),mouse=new THREE.Vector2();
+let down=null,dragged=false,last=null;
+cv.addEventListener('pointerdown',e=>{down={x:e.clientX,y:e.clientY};last={...down};dragged=false;cv.setPointerCapture(e.pointerId);cv.style.cursor='grabbing'});
+cv.addEventListener('pointermove',e=>{
+  if(!down)return;const dx=e.clientX-last.x,dy=e.clientY-last.y;
+  if(Math.abs(e.clientX-down.x)+Math.abs(e.clientY-down.y)>5)dragged=true;
+  if(dragged){root.rotation.y+=dx*0.01;root.rotation.x=Math.max(-1.2,Math.min(1.2,root.rotation.x+dy*0.01));}
+  last={x:e.clientX,y:e.clientY};
+});
+cv.addEventListener('pointerup',e=>{
+  cv.style.cursor='grab';if(!down)return;down=null;if(dragged)return;
+  const b=cv.getBoundingClientRect();mouse.set((e.clientX-b.left)/b.width*2-1,-(e.clientY-b.top)/b.height*2+1);
+  ray.setFromCamera(mouse,cam);
+  const hit=ray.intersectObjects(picks.filter(m=>m.visible),false)[0];
+  if(hit)select(hit.object);else if(sel)select(null);else{spin=!spin;hint.textContent=spin?'En rotation':'Arrêté';}
+});
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function size(){const w=fig.clientWidth,h=fig.clientHeight;renderer.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix();}
+const ro=new ResizeObserver(size);ro.observe(fig);size();
+function loop(){
+  if(spin&&!reduce&&!down)root.rotation.y+=0.004;
+  if(ring.visible)ring.lookAt(cam.position);
+  renderer.render(scene,cam);requestAnimationFrame(loop);
+}
+show(null);loop();
+}
+</script>
+</body>
+</html>
